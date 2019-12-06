@@ -17,7 +17,7 @@ const userDao = new UserDao();
 router.get('/all', async (req: Request, res: Response) => {
     try {
         const users = await userDao.getAll();
-        return res.status(OK).json({users});
+        return res.status(OK).json({ users });
     } catch (err) {
         logger.error(err.message, err);
         return res.status(BAD_REQUEST).json({
