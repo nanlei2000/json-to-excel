@@ -3,6 +3,7 @@
 # dependencies
 be/node_modules
 be/dist
+be/src/public/excel
 /.pnp
 .pnp.js
 

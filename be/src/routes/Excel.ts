@@ -1,14 +1,14 @@
 
-import { UserDao } from '@daos';
 import { logger } from '@shared';
-import { Response, Router, Express } from 'express';
-import { BAD_REQUEST, CREATED, OK } from 'http-status-codes';
+import { Response, Router } from 'express';
+import { BAD_REQUEST, CREATED } from 'http-status-codes';
 import { paramMissingError } from '@shared';
-import { ParamsDictionary, Dictionary, Request } from 'express-serve-static-core';
+import { Request } from 'express-serve-static-core';
+import { ExcelDao } from 'src/daos/Excel/ExcelDao';
 
 // Init shared
 const router = Router();
-const userDao = new UserDao();
+const excelDao = new ExcelDao();
 
 // /******************************************************************************
 //  *                      Get All Users - "GET /api/users/all"
@@ -33,13 +33,20 @@ const userDao = new UserDao();
 router.post('/add', async (req: Request<never, never, Record<'json', string>>, res: Response) => {
     try {
         const { json } = req.body;
-        json.add();
+        // json.add();
         if (!json) {
             return res.status(BAD_REQUEST).json({
                 error: paramMissingError,
             });
         }
-        await Promise.resolve();
+        const filePath: string | undefined = await excelDao.add(json);
+        if (!filePath) {
+            return res.status(BAD_REQUEST).json(
+                {
+                    error: '生成失败'
+                }
+            )
+        }
         return res.status(CREATED).json(
             {
                 code: 200,
