@@ -8,3 +8,4 @@ if (usingMockDb === 'true') {
 // tslint:disable:no-var-requires
 export const { UserDao } = require(userDaoPath);
 export { ExcelDao } from './Excel/ExcelDao';
+export { MagnetDao } from './Magnet/MagnetDao';

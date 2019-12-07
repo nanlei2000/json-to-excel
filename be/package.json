@@ -18,6 +18,7 @@
     "dependencies": {
         "@types/fs-extra": "^8.0.1",
         "@types/uuid": "^3.4.6",
+        "@types/webtorrent": "^0.107.0",
         "command-line-args": "^5.1.1",
         "cookie-parser": "^1.4.4",
         "dotenv": "^8.2.0",
@@ -26,6 +27,7 @@
         "module-alias": "^2.2.2",
         "morgan": "^1.9.1",
         "uuid": "^3.3.3",
+        "webtorrent": "^0.107.17",
         "winston": "^3.2.1",
         "xlsx": "^0.15.3"
     },
