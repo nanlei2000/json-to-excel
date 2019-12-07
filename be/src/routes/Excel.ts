@@ -1,10 +1,11 @@
 
-import { logger } from '@shared';
+import { logger, currentUrl } from '@shared';
 import { Response, Router } from 'express';
 import { BAD_REQUEST, CREATED } from 'http-status-codes';
 import { paramMissingError } from '@shared';
 import { Request } from 'express-serve-static-core';
 import { ExcelDao } from 'src/daos/Excel/ExcelDao';
+import { Res } from 'src/shared/Response';
 
 // Init shared
 const router = Router();
@@ -26,41 +27,52 @@ const excelDao = new ExcelDao();
 //     }
 // });
 
-/******************************************************************************
- *                       Add One - "POST /api/users/add"
- ******************************************************************************/
-
-router.post('/add', async (req: Request<never, never, Record<'json', string>>, res: Response) => {
+interface ExcelAddResData {
+    file: string,
+}
+/**
+ *  效验json
+ */
+function isValidJSONForExcel(str: string): unknown[][] | undefined {
     try {
-        const { json } = req.body;
-        // json.add();
-        if (!json) {
-            return res.status(BAD_REQUEST).json({
-                error: paramMissingError,
+        const parsed: unknown = JSON.parse(str);
+        if (Array.isArray(parsed) && Array.isArray(parsed[0])) {
+            return parsed;
+        } else {
+            return undefined;
+        }
+    } catch (error) {
+        return undefined;
+    }
+}
+
+const addExcel = async (req: Request<never, never, Record<'json', string>>, res: Res<ExcelAddResData>) => {
+    try {
+        const parsed = isValidJSONForExcel(req.body.json);
+        if (parsed === undefined) {
+            return res.json({
+                msg: 'json不合法',
+                code: BAD_REQUEST,
             });
         }
-        const filePath: string | undefined = await excelDao.add(json);
+        const filePath: string | undefined = await excelDao.add(parsed);
         if (!filePath) {
-            return res.status(BAD_REQUEST).json(
-                {
-                    error: '生成失败'
-                }
-            )
+            throw new Error('生成excel失败，请重试')
         }
-        return res.status(CREATED).json(
-            {
-                code: 200,
-                msg: '创建成功',
-                data: {
-                    file: json,
-                },
+        return res.json({
+            code: 200,
+            msg: '创建成功',
+            data: {
+                file: currentUrl + filePath,
             },
-        ).end();
+        });
     } catch (err) {
         logger.error(err.message, err);
-        return res.status(BAD_REQUEST).json({
-            error: err.message,
+        return res.json({
+            msg: err.message,
+            code: BAD_REQUEST,
         });
     }
-});
+};
+router.post('/add', addExcel);
 export const ExcelRouter = router;
