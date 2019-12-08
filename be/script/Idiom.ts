@@ -14,11 +14,9 @@ export interface Item {
 import mysql from 'mysql';
 import fs from 'fs-extra';
 import { fieldHelper } from '../src/shared'
-import { IdiomTable } from '../src/database/mysql'
+import { baseConf } from '../src/database/mysql'
 export const connection = mysql.createConnection({
-    host: '127.0.0.1',
-    user: 'root',
-    password: 'kh152572515',
+    ...baseConf,
     database: 'fun_api'
 });
 const field = fieldHelper<IdiomTable.Fields>();
