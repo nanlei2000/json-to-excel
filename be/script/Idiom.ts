@@ -14,9 +14,26 @@ export interface Item {
 import mysql from 'mysql';
 import fs from 'fs-extra';
 import { fieldHelper } from '../src/shared'
-import { baseConf, IdiomTable } from '../src/database/mysql'
+import { IdiomTable } from '../src/database/mysql'
+import path from 'path';
+import commandLineArgs from 'command-line-args';
+const confPath = path.join(__dirname, '../env/mysql.json');
+export const baseConf = fs.readJSONSync(confPath);
+
+// Setup command line options
+const options = commandLineArgs([
+    {
+        name: 'env',
+        alias: 'e',
+        defaultValue: 'production',
+        type: String,
+    },
+]);
+if (!baseConf) {
+    throw new Error('找不到' + confPath);
+}
 export const connection = mysql.createConnection({
-    ...baseConf,
+    ...(baseConf[options.env]),
     database: 'fun_api'
 });
 const field = fieldHelper<IdiomTable.Fields>();
