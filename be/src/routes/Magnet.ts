@@ -31,7 +31,7 @@ namespace AddMagnet {
             } else {
                 return res.json({
                     code: BAD_REQUEST,
-                    msg: "不合法的json"
+                    msg: "不合法的 magnet url"
                 })
             }
 

@@ -4,7 +4,8 @@ import { Request, Response } from 'express';
 import logger from 'morgan';
 import path from 'path';
 import BaseRouter from './routes';
-
+// tslint:disable-next-line: no-var-requires
+require('./database/mysql');
 // Init express
 const app = express();
 
