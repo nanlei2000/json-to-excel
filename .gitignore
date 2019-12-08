@@ -5,6 +5,7 @@ be/node_modules
 be/dist
 be/src/public/excel
 be/env
+be/logs
 /.pnp
 .pnp.js
 

@@ -14,7 +14,7 @@ export interface Item {
 import mysql from 'mysql';
 import fs from 'fs-extra';
 import { fieldHelper } from '../src/shared'
-import { baseConf } from '../src/database/mysql'
+import { baseConf, IdiomTable } from '../src/database/mysql'
 export const connection = mysql.createConnection({
     ...baseConf,
     database: 'fun_api'
