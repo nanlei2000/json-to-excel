@@ -1,5 +1,5 @@
 import mysql from 'mysql';
-import { logger } from '@shared';
+import { logger, fieldHelper } from '@shared';
 export const connection = mysql.createConnection({
     host: '127.0.0.1',
     user: 'root',
@@ -12,14 +12,19 @@ connection.query('SELECT 1', (error) => {
     logger.info('mysql root 用户连接成功');
 });
 
-export interface IdiomTable {
-    /** 出处 */
-    derivation: string;
-    example: string;
-    explanation: string;
-    pinyin: string;
-    word: string;
-    /** 拼音简写 */
-    abbr: string;
-    id: number;
+export namespace IdiomTable {
+    export const name = "idiom";
+    export interface Fields {
+        /** 出处 */
+        derivation: string;
+        example: string;
+        explanation: string;
+        pinyin: string;
+        word: string;
+        /** 拼音简写 */
+        abbr: string;
+        id: number;
+    }
+    export const fieldV = fieldHelper<Fields>()
+    export const field = (...key: (keyof Fields)[]) => key.join(',');
 }

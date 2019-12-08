@@ -9,3 +9,4 @@ if (usingMockDb === 'true') {
 export const { UserDao } = require(userDaoPath);
 export { ExcelDao } from './Excel/ExcelDao';
 export { MagnetDao } from './Magnet/MagnetDao';
+export { IdiomDao } from './Idiom/IdiomDao';

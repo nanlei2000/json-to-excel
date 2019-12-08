@@ -21,11 +21,11 @@ export const connection = mysql.createConnection({
     password: 'kh152572515',
     database: 'fun_api'
 });
-const field = fieldHelper<IdiomTable>();
+const field = fieldHelper<IdiomTable.Fields>();
 function setRow(row: Item): Promise<unknown> {
     return new Promise((resolve, reject) => {
         connection.query(
-            `INSERT INTO idiom SET
+            `INSERT INTO ${IdiomTable.name} SET
             ${field("derivation", row.derivation)},
             ${field("example", row.example)},
             ${field("explanation", row.explanation)},
