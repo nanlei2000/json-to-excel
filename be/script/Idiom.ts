@@ -13,8 +13,8 @@ export interface Item {
 }
 import mysql from 'mysql';
 import fs from 'fs-extra';
-import { fieldHelper } from '../src/shared'
-import { IdiomTable } from '../src/database/mysql'
+import { fieldHelper } from '../src/shared';
+import { IdiomTable } from '../src/database/mysql';
 import path from 'path';
 import commandLineArgs from 'command-line-args';
 const confPath = path.join(__dirname, '../env/mysql.json');
@@ -32,10 +32,15 @@ const options = commandLineArgs([
 if (!baseConf) {
     throw new Error('找不到' + confPath);
 }
-export const connection = mysql.createConnection({
+const config = {
     ...(baseConf[options.env]),
-    database: 'fun_api'
+    database: 'fun_api',
+};
+export const connection = mysql.createConnection({
+    ...config, user: 'root',
+    insecureAuth: true, debug: true, trace: true
 });
+console.log("→: connection", connection);
 const field = fieldHelper<IdiomTable.Fields>();
 function setRow(row: Item): Promise<unknown> {
     return new Promise((resolve, reject) => {
@@ -49,15 +54,15 @@ function setRow(row: Item): Promise<unknown> {
             ${field("abbr", row.abbreviation)}
         `, (error) => {
             if (error) { reject(error); }
-            resolve()
+            resolve();
         });
-    })
+    });
 }
 const json: Item[] = fs.readJSONSync('./idiom.json');
 
 Promise.all(json.map(v => setRow(v)))
     .then(() => {
-        console.log('成功')
+        console.log('成功');
     })
     .catch((err) => {
         console.log(err.message);
