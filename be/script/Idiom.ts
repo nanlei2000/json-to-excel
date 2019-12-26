@@ -36,8 +36,8 @@ const config = {
     ...(baseConf[options.env]),
     database: 'fun_api',
 };
-export const connection = mysql.createConnection({
-    ...config, user: 'root',
+export const connection = mysql.createPool({
+    ...config, user: 'nanlei',
     insecureAuth: true, debug: true, trace: true
 });
 console.log("→: connection", connection);
@@ -68,6 +68,6 @@ Promise.all(json.map(v => setRow(v)))
         console.log(err.message);
     }
     ).finally(() => {
-        connection.destroy();
+        // connection.destroy();
         process.exit(0);
     });
