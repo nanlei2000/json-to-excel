@@ -51,7 +51,7 @@ namespace GetAll {
 namespace GetLongest {
     export const path = '/get-random-chain';
     interface ResData {
-        words: string[];
+        words: string;
     }
     const wordReg: RegExp = /^[\u4e00-\u9fa5]{1,}$/;
     type Query = Record<'word', string | undefined>;
@@ -66,7 +66,7 @@ namespace GetLongest {
                 return res.json({
                     code: 200,
                     data: {
-                        words: rows
+                        words: rows.join(' -> ')
                     },
                     msg: "查询成功"
                 });
