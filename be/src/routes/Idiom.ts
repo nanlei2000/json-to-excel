@@ -49,7 +49,7 @@ namespace GetAll {
     }
 }
 namespace GetLongest {
-    export const path = '/get-random-chain';
+    export const path = '/get-longest-chain';
     interface ResData {
         count: number;
         words: string[];
@@ -63,7 +63,7 @@ namespace GetLongest {
         try {
             const { word } = req.query as Query;
             if (word && wordReg.test(word)) {
-                const rows = await idiomDao.getRandomChain(word);
+                const rows = await idiomDao.getLongestChain(word);
                 return res.json({
                     code: 200,
                     data: {

@@ -18,7 +18,7 @@ export class IdiomDao {
         });
     }
     /** @throws IOException */
-    public async getRandomChain(seedWord: string): Promise<string[]> {
+    public async getLongestChain(seedWord: string): Promise<string[]> {
         const allWords = await new Promise<Pick<IdiomTable.Fields,
             'word' | 'id' | 'next_id_str'>[]>((resolve, reject) => {
                 const allWordsSql = `SELECT ${field("word", 'id', 'next_id_str')} FROM ${IdiomTable.name}`;
@@ -55,7 +55,8 @@ function findRandomChain(id: number, map: IdInfoMap): string[] {
     return loop(id, []).map(id => map.get(id)?.[0]!);
 }
 function findLongestChain(id: number, map: IdInfoMap): string[] {
-    let maxLoopCount = 20000;
+    /** @see https://2ality.com/2014/04/call-stack-size.html */
+    let maxLoopCount = 20538;
     function loop(id: number, chain: number[]): number[] {
         maxLoopCount--;
         if (maxLoopCount < 0) {
