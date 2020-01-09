@@ -18,7 +18,7 @@ export class IdiomDao {
         });
     }
     /** @throws IOException */
-    public async getRandomChain(word: string): Promise<string[]> {
+    public async getRandomChain(seedWord: string): Promise<string[]> {
         const allWords = await new Promise<Pick<IdiomTable.Fields,
             'word' | 'id' | 'next_id_str'>[]>((resolve, reject) => {
                 const allWordsSql = `SELECT ${field("word", 'id', 'next_id_str')} FROM ${IdiomTable.name}`;
@@ -27,21 +27,18 @@ export class IdiomDao {
                     resolve(result);
                 });
             });
-        const srcRow = await new Promise<Pick<IdiomTable.Fields,
-            'id'>[]>((resolve, reject) => {
-                const allWordsSql = `SELECT ${field('id')} FROM ${IdiomTable.name}
-                WHERE ${fieldV('word', word)}`;
-                connection.query(allWordsSql, (err, result: any[]) => {
-                    if (err) { reject(err); };
-                    resolve(result);
-                });
-            });
-
         const idInfoMap: IdInfoMap = new Map<number, [string, number[]]>();
+        let seedId = -1;
         for (const { id, word, next_id_str } of allWords) {
+            if (seedId < 0 && word === seedWord) {
+                seedId = id;
+            }
             idInfoMap.set(id, [word, next_id_str.split(',').map(Number)]);
         }
-        return findLongestChain(srcRow[0].id, idInfoMap);
+        if (seedId < 0) {
+            throw new Error(`「${seedWord}」没有在库中`);
+        }
+        return findLongestChain(seedId, idInfoMap);
     }
 }
 
@@ -58,23 +55,27 @@ function findRandomChain(id: number, map: IdInfoMap): string[] {
     return loop(id, []).map(id => map.get(id)?.[0]!);
 }
 function findLongestChain(id: number, map: IdInfoMap): string[] {
+    let maxLoopCount = 20000;
     function loop(id: number, chain: number[]): number[] {
+        maxLoopCount--;
+        if (maxLoopCount < 0) {
+            return chain;
+        }
         const nextWordIdList = (map.get(id)?.[1] ?? []).filter(id => !chain.includes(id));
         if (!nextWordIdList.length) {
             return chain;
         } else {
-            const randomId = nextWordIdList[_.random(0, nextWordIdList.length - 1)];
             let maxLength = -1;
-            let bestId = -1;
+            let longestChain: number[] = [];
             for (const id of nextWordIdList) {
-                const words = loop(id, [...chain, id]);
-                const currentLength = words.length;
+                const currentChain = loop(id, [...chain, id]);
+                const currentLength = currentChain.length;
                 if (currentLength > maxLength) {
                     maxLength = currentLength;
-                    bestId = id;
+                    longestChain = currentChain;
                 }
             }
-            return loop(bestId, [...chain, bestId]);
+            return longestChain;
         }
     }
     return loop(id, []).map(id => map.get(id)?.[0]!);
