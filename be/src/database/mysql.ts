@@ -36,7 +36,8 @@ export namespace IdiomTable {
         /** 拼音简写 */
         abbr: string;
         id: number;
+        next_id_str: string;
     }
-    export const fieldV = fieldHelper<Fields>()
+    export const fieldV = fieldHelper<Fields>();
     export const field = (...key: (keyof Fields)[]) => key.join(',');
 }
