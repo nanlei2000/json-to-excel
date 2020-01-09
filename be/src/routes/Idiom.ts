@@ -49,7 +49,7 @@ namespace GetAll {
     }
 }
 namespace GetLongest {
-    export const path = '/get-longest-chain';
+    export const path = '/longest-chain';
     interface ResData {
         count: number;
         words: string[];
