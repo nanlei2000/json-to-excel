@@ -5,6 +5,7 @@ import logger from 'morgan';
 import path from 'path';
 import BaseRouter from './routes';
 import './database/mysql';
+import './database/redis';
 // Init express
 const app = express();
 

@@ -20,8 +20,7 @@ export const connection = mysql.createConnection({
 });
 connection.query('SELECT 1', (error) => {
     if (error) { throw error; }
-    // connected!
-    logger.info('mysql root 用户连接成功');
+    logger.info(`mysql ${(baseConf as Dictionary<BaseConf>)[process.env.NODE_ENV!].user} 用户连接成功`);
 });
 
 export namespace IdiomTable {
