@@ -1,10 +1,12 @@
 import { connection, IdiomTable } from '../../database/mysql';
 import _ from 'lodash';
 const field = IdiomTable.field;
-const fieldV = IdiomTable.fieldV;
 type IdInfoMap = Map<number, [string, number[]]>;
 
 export class IdiomDao {
+    private idInfoMap?: IdInfoMap;
+    private allWords: Pick<IdiomTable.Fields, "word" | "id" | "next_id_str">[] = [];
+
     /** @throws IOException */
     public async getAll(word: string): Promise<Pick<IdiomTable.Fields, 'word'>[]> {
         return new Promise((resolve, reject) => {
@@ -19,7 +21,18 @@ export class IdiomDao {
     }
     /** @throws IOException */
     public async getLongestChain(seedWord: string): Promise<string[]> {
-        const allWords = await new Promise<Pick<IdiomTable.Fields,
+        await this.setMapCache();
+        const seedId = this.allWords.find(v => v.word === seedWord)?.id ?? -1;
+        if (seedId < 0) {
+            throw new Error(`「${seedWord}」没有在库中`);
+        }
+        return findLongestChain(seedId, this.idInfoMap!);
+    }
+    private async setMapCache(): Promise<void> {
+        if (this.allWords.length > 0) {
+            return;
+        }
+        this.allWords = await new Promise<Pick<IdiomTable.Fields,
             'word' | 'id' | 'next_id_str'>[]>((resolve, reject) => {
                 const allWordsSql = `SELECT ${field("word", 'id', 'next_id_str')} FROM ${IdiomTable.name}`;
                 connection.query(allWordsSql, (err, result: any[]) => {
@@ -28,35 +41,16 @@ export class IdiomDao {
                 });
             });
         const idInfoMap: IdInfoMap = new Map<number, [string, number[]]>();
-        let seedId = -1;
-        for (const { id, word, next_id_str } of allWords) {
-            if (seedId < 0 && word === seedWord) {
-                seedId = id;
-            }
+        for (const { id, word, next_id_str } of this.allWords) {
             idInfoMap.set(id, [word, next_id_str.split(',').map(Number)]);
         }
-        if (seedId < 0) {
-            throw new Error(`「${seedWord}」没有在库中`);
-        }
-        return findLongestChain(seedId, idInfoMap);
+        this.idInfoMap = idInfoMap;
     }
 }
 
-function findRandomChain(id: number, map: IdInfoMap): string[] {
-    function loop(id: number, chain: number[]): number[] {
-        const nextWordIdList = (map.get(id)?.[1] ?? []).filter(id => !chain.includes(id));
-        if (!nextWordIdList.length) {
-            return chain;
-        } else {
-            const randomId = nextWordIdList[_.random(0, nextWordIdList.length - 1)];
-            return loop(randomId, [...chain, randomId]);
-        }
-    }
-    return loop(id, []).map(id => map.get(id)?.[0]!);
-}
 function findLongestChain(id: number, map: IdInfoMap): string[] {
     /** @see https://2ality.com/2014/04/call-stack-size.html */
-    let maxLoopCount = 20538;
+    let maxLoopCount = 16000;
     function loop(id: number, chain: number[]): number[] {
         maxLoopCount--;
         if (maxLoopCount < 0) {
