@@ -1,12 +1,13 @@
 import { connection, IdiomTable } from '../../database/mysql';
 import _ from 'lodash';
+import { redis } from 'src/database/redis';
 const field = IdiomTable.field;
 type IdInfoMap = Map<number, [string, number[]]>;
+type AllWords = Pick<IdiomTable.Fields, "word" | "id" | "next_id_str">[];
 
 export class IdiomDao {
-    private idInfoMap?: IdInfoMap;
-    private allWords: Pick<IdiomTable.Fields, "word" | "id" | "next_id_str">[] = [];
-
+    private allWordsKey: string = ['IdiomDao', 'allWords'].join(':');
+    private idInfoMapKey: string = ['IdiomDao', 'idInfoMap'].join(':');
     /** @throws IOException */
     public async getAll(word: string): Promise<Pick<IdiomTable.Fields, 'word'>[]> {
         return new Promise((resolve, reject) => {
@@ -21,18 +22,15 @@ export class IdiomDao {
     }
     /** @throws IOException */
     public async getLongestChain(seedWord: string): Promise<string[]> {
-        await this.setMapCache();
-        const seedId = this.allWords.find(v => v.word === seedWord)?.id ?? -1;
+        const [allWords, idInfoMap] = await this.setMapCache();
+        const seedId = allWords.find(v => v.word === seedWord)?.id ?? -1;
         if (seedId < 0) {
             throw new Error(`「${seedWord}」没有在库中`);
         }
-        return findLongestChain(seedId, this.idInfoMap!);
+        return findLongestChain(seedId, idInfoMap!);
     }
-    private async setMapCache(): Promise<void> {
-        if (this.allWords.length > 0) {
-            return;
-        }
-        this.allWords = await new Promise<Pick<IdiomTable.Fields,
+    private async setMapCache(): Promise<[AllWords, IdInfoMap]> {
+        const allWordsFromSql = await new Promise<Pick<IdiomTable.Fields,
             'word' | 'id' | 'next_id_str'>[]>((resolve, reject) => {
                 const allWordsSql = `SELECT ${field("word", 'id', 'next_id_str')} FROM ${IdiomTable.name}`;
                 connection.query(allWordsSql, (err, result: any[]) => {
@@ -40,11 +38,11 @@ export class IdiomDao {
                     resolve(result);
                 });
             });
-        const idInfoMap: IdInfoMap = new Map<number, [string, number[]]>();
-        for (const { id, word, next_id_str } of this.allWords) {
-            idInfoMap.set(id, [word, next_id_str.split(',').map(Number)]);
+        const idInfoMapFromSql: IdInfoMap = new Map<number, [string, number[]]>();
+        for (const { id, word, next_id_str } of allWordsFromSql) {
+            idInfoMapFromSql.set(id, [word, next_id_str.split(',').map(Number)]);
         }
-        this.idInfoMap = idInfoMap;
+        return [allWordsFromSql, idInfoMapFromSql];
     }
 }
 
