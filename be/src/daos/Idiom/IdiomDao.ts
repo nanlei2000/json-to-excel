@@ -60,20 +60,20 @@ export class IdiomDao {
 function findLongestChain(id: number, map: IdInfoMap): string[] {
     /** @see https://2ality.com/2014/04/call-stack-size.html */
     let maxLoopCount = 16000;
-    function loop(id: number, chain: Set<number>): Set<number> {
+    function loop(id: number, chain: number[]): number[] {
         maxLoopCount--;
         if (maxLoopCount < 0) {
             return chain;
         }
-        const nextWordIdList = (map.get(id)?.[1] ?? []).filter(id => !chain.has(id));
+        const nextWordIdList = (map.get(id)?.[1] ?? []).filter(id => !chain.includes(id));
         if (!nextWordIdList.length) {
             return chain;
         } else {
             let maxLength = -1;
-            let longestChain: Set<number> = new Set();
+            let longestChain: number[] = [];
             for (const id of nextWordIdList) {
-                const currentChain = loop(id, new Set<number>([...chain, id]));
-                const currentLength = currentChain.size;
+                const currentChain = loop(id, [...chain, id]);
+                const currentLength = currentChain.length;
                 if (currentLength > maxLength) {
                     maxLength = currentLength;
                     longestChain = currentChain;
@@ -82,5 +82,5 @@ function findLongestChain(id: number, map: IdInfoMap): string[] {
             return longestChain;
         }
     }
-    return [...loop(id, new Set())].map(id => map.get(id)?.[0]!);
+    return loop(id, []).map(id => map.get(id)?.[0]!);
 }

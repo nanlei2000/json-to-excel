@@ -29,5 +29,5 @@ export function fieldHelper<T extends object>() {
 };
 
 export function md5(str: string): string {
-    return crypto.createHash('md5').update(name).digest('hex');
+    return crypto.createHash('md5').update(str).digest('hex');
 }
