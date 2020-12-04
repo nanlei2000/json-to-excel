@@ -1,3 +1,30 @@
 {
-    "python.pythonPath": "/usr/bin/python3"
+  "[plaintext]": {
+    "files.insertFinalNewline": false
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
+  "typescript.tsc.autoDetect": "off",
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "editor.tabSize": 4,
+  "editor.formatOnSave": true,
+  "editor.formatOnSaveMode": "file",
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
+  "typescript.format.enable": true,
+  "typescript.format.semicolons": "insert",
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "[html]": {
+    "editor.defaultFormatter": "vscode.html-language-features"
+  },
+  "editor.insertSpaces": true,
+  "typescript.preferences.importModuleSpecifier": "non-relative",
+  "javascript.format.semicolons": "insert"
 }

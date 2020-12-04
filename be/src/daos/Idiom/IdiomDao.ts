@@ -1,6 +1,7 @@
 import { connection, IdiomTable } from '../../database/mysql';
 import _ from 'lodash';
 import { redis } from 'src/database/redis';
+import { md5 } from '@shared';
 const field = IdiomTable.field;
 type IdInfoMap = Map<number, [string, number[]]>;
 type AllWords = Pick<IdiomTable.Fields, "word" | "id" | "next_id_str">[];
@@ -8,6 +9,7 @@ type AllWords = Pick<IdiomTable.Fields, "word" | "id" | "next_id_str">[];
 export class IdiomDao {
     private allWordsKey: string = ['IdiomDao', 'allWords'].join(':');
     private idInfoMapKey: string = ['IdiomDao', 'idInfoMap'].join(':');
+    private longestChainKeys: string[] = ['IdiomDao', 'longestChain'];
     /** @throws IOException */
     public async getAll(word: string): Promise<Pick<IdiomTable.Fields, 'word'>[]> {
         return new Promise((resolve, reject) => {
@@ -21,13 +23,22 @@ export class IdiomDao {
         });
     }
     /** @throws IOException */
-    public async getLongestChain(seedWord: string): Promise<string[]> {
+    public async getLongestChain(seedWord: string): Promise<string[] | undefined> {
+        const key = [...this.longestChainKeys, md5(seedWord)].join(":");
+        const redisRes = await redis.get(key);
+        if (redisRes) {
+            return redisRes.split(',');
+        }
+
+
         const [allWords, idInfoMap] = await this.setMapCache();
         const seedId = allWords.find(v => v.word === seedWord)?.id ?? -1;
         if (seedId < 0) {
-            throw new Error(`「${seedWord}」没有在库中`);
+            return undefined;
         }
-        return findLongestChain(seedId, idInfoMap!);
+        const longestChain = findLongestChain(seedId, idInfoMap!);
+        redis.set(key, longestChain.join(','), 'EX', 24 * 3600);
+        return longestChain;
     }
     private async setMapCache(): Promise<[AllWords, IdInfoMap]> {
         const allWordsFromSql = await new Promise<Pick<IdiomTable.Fields,
@@ -49,20 +60,20 @@ export class IdiomDao {
 function findLongestChain(id: number, map: IdInfoMap): string[] {
     /** @see https://2ality.com/2014/04/call-stack-size.html */
     let maxLoopCount = 16000;
-    function loop(id: number, chain: number[]): number[] {
+    function loop(id: number, chain: Set<number>): Set<number> {
         maxLoopCount--;
         if (maxLoopCount < 0) {
             return chain;
         }
-        const nextWordIdList = (map.get(id)?.[1] ?? []).filter(id => !chain.includes(id));
+        const nextWordIdList = (map.get(id)?.[1] ?? []).filter(id => !chain.has(id));
         if (!nextWordIdList.length) {
             return chain;
         } else {
             let maxLength = -1;
-            let longestChain: number[] = [];
+            let longestChain: Set<number> = new Set();
             for (const id of nextWordIdList) {
-                const currentChain = loop(id, [...chain, id]);
-                const currentLength = currentChain.length;
+                const currentChain = loop(id, new Set<number>([...chain, id]));
+                const currentLength = currentChain.size;
                 if (currentLength > maxLength) {
                     maxLength = currentLength;
                     longestChain = currentChain;
@@ -71,5 +82,5 @@ function findLongestChain(id: number, map: IdInfoMap): string[] {
             return longestChain;
         }
     }
-    return loop(id, []).map(id => map.get(id)?.[0]!);
+    return [...loop(id, new Set())].map(id => map.get(id)?.[0]!);
 }

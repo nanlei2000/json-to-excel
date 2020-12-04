@@ -63,22 +63,27 @@ namespace GetLongest {
         try {
             const { word } = req.query as Query;
             if (word && wordReg.test(word)) {
-                const rows = await idiomDao.getLongestChain(word);
+                const rows: string[] | undefined = await idiomDao.getLongestChain(word);
+                if (!rows) {
+                    return res.json({
+                        code: BAD_REQUEST,
+                        msg: `「${word}」没有在库中`,
+                    });
+                }
                 return res.json({
                     code: 200,
+                    msg: "查询成功",
                     data: {
                         count: rows.length,
                         words: rows,
                     },
-                    msg: "查询成功"
                 });
             } else {
                 return res.json({
                     code: BAD_REQUEST,
-                    msg: "无效的参数"
+                    msg: "无效的参数",
                 });
             }
-
         } catch (err) {
             logger.error(err.message, err);
             return res.json({

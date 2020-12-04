@@ -1,4 +1,5 @@
 import { logger } from './Logger';
+import crypto from 'crypto';
 import mysql from 'mysql';
 export const paramMissingError = 'One or more of the required parameters was missing.';
 
@@ -17,12 +18,16 @@ export const currentUrl = `http://${process.env.HOST}:${process.env.PORT}`;
 export function escape(strings: TemplateStringsArray, ...values: any[]): string {
     return strings.map((s, index) =>
         (index < values.length ? `${s}${mysql.escape(values[index])}` : s))
-        .join('')
+        .join('');
 };
 
 export function fieldHelper<T extends object>() {
     return function (
         key: Extract<keyof T, string>, value: T[Extract<keyof T, string>]): string {
-        return `${key}=${mysql.escape(value)}`
+        return `${key}=${mysql.escape(value)}`;
     };
 };
+
+export function md5(str: string): string {
+    return crypto.createHash('md5').update(name).digest('hex');
+}
