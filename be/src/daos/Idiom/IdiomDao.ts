@@ -36,7 +36,7 @@ export class IdiomDao {
             return undefined;
         }
         const longestChain = findLongestChainR(seedId, idInfoMap!, backSteps);
-        // redis.set(key, longestChain.join(','), 'EX', 24 * 3600);
+        redis.set(key, longestChain.join(','), 'EX', 24 * 3600);
         return longestChain;
     }
     private async setMapCache(): Promise<[AllWords, IdInfoMap]> {
@@ -121,7 +121,6 @@ async function findLongestChainR(id: number, map: IdInfoMap, backSteps: number =
         res = loop(res[res.length - 1], res);
 
         if (i === maxRetryCount - 1 || lastTailId === res[res.length - backSteps]) {
-            console.log(i);
             break;
         }
         lastTailId = res[res.length - backSteps];
