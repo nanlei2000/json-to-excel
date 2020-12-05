@@ -35,7 +35,7 @@ export class IdiomDao {
         if (seedId < 0) {
             return undefined;
         }
-        const longestChain = findLongestChainR(seedId, idInfoMap!, backSteps);
+        const longestChain = await findLongestChainR(seedId, idInfoMap!, backSteps);
         redis.set(key, longestChain.join(','), 'EX', 24 * 3600);
         return longestChain;
     }
