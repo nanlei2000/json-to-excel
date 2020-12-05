@@ -55,15 +55,26 @@ namespace GetLongest {
         words: string[];
     }
     const wordReg: RegExp = /^[\u4e00-\u9fa5]{1,}$/;
-    type Query = Record<'word', string | undefined>;
+    type Query = Record<'word' | 'backSteps', string | undefined>;
     export async function coreMid(
         req: Request,
         res: Res<ResData>
     ): Promise<Res<ResData>> {
         try {
-            const { word } = req.query as Query;
+            const { word, backSteps } = req.query as Query;
+            let backStepsReal = 10;
+            if (!backSteps) {
+                // 
+            } else if (isNaN(+backSteps) || +backSteps < 0) {
+                return res.json({
+                    msg: '请传入合法的"backSteps"',
+                    code: BAD_REQUEST,
+                });
+            } else {
+                backStepsReal = Math.round(+backSteps);
+            }
             if (word && wordReg.test(word)) {
-                const rows: string[] | undefined = await idiomDao.getLongestChain(word);
+                const rows: string[] | undefined = await idiomDao.getLongestChain(word, backStepsReal);
                 if (!rows) {
                     return res.json({
                         code: BAD_REQUEST,

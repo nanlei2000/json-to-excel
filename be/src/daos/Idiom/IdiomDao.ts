@@ -1,7 +1,8 @@
 import { connection, IdiomTable } from '../../database/mysql';
 import _ from 'lodash';
-import { redis } from 'src/database/redis';
+import { redis } from '../../database/redis';
 import { md5 } from '@shared';
+import { setTimeout } from 'timers';
 const field = IdiomTable.field;
 type IdInfoMap = Map<number, [string, number[]]>;
 type AllWords = Pick<IdiomTable.Fields, "word" | "id" | "next_id_str">[];
@@ -23,21 +24,19 @@ export class IdiomDao {
         });
     }
     /** @throws IOException */
-    public async getLongestChain(seedWord: string): Promise<string[] | undefined> {
+    public async getLongestChain(seedWord: string, backSteps: number): Promise<string[] | undefined> {
         const key = [...this.longestChainKeys, md5(seedWord)].join(":");
         const redisRes = await redis.get(key);
         if (redisRes) {
             return redisRes.split(',');
         }
-
-
         const [allWords, idInfoMap] = await this.setMapCache();
         const seedId = allWords.find(v => v.word === seedWord)?.id ?? -1;
         if (seedId < 0) {
             return undefined;
         }
-        const longestChain = findLongestChain(seedId, idInfoMap!);
-        redis.set(key, longestChain.join(','), 'EX', 24 * 3600);
+        const longestChain = findLongestChainR(seedId, idInfoMap!, backSteps);
+        // redis.set(key, longestChain.join(','), 'EX', 24 * 3600);
         return longestChain;
     }
     private async setMapCache(): Promise<[AllWords, IdInfoMap]> {
@@ -83,4 +82,56 @@ function findLongestChain(id: number, map: IdInfoMap): string[] {
         }
     }
     return loop(id, []).map(id => map.get(id)?.[0]!);
+}
+
+async function findLongestChainR(id: number, map: IdInfoMap, backSteps: number = 20): Promise<string[]> {
+    /** @see https://2ality.com/2014/04/call-stack-size.html */
+    let maxLoopCount = 5000;
+    /** 为什么递归结束最后一项是 0  */
+    function loop(id: number, chain: number[]): number[] {
+        maxLoopCount--;
+        if (maxLoopCount < 0) {
+            return chain;
+        }
+        const nextWordIds = map.get(id)?.[1];
+        if (nextWordIds === undefined || nextWordIds.length === 0) {
+            return chain;
+        } else {
+            let maxLength = -1;
+            let longestChain: number[] = [];
+            for (let i = 0; i < nextWordIds!.length; i++) {
+                if (chain.includes(nextWordIds[i]) === false) {
+                    const currentChain = loop(nextWordIds[i], [...chain, nextWordIds[i]]);
+                    const currentLength = currentChain.length;
+                    if (currentLength > maxLength) {
+                        maxLength = currentLength;
+                        longestChain = currentChain;
+                    }
+                }
+            }
+            return longestChain;
+        }
+    }
+    /** @see https://snyk.io/blog/nodejs-how-even-quick-async-functions-can-block-the-event-loop-starve-io/ */
+    const maxRetryCount = 500;
+    let res = [id];
+    let lastTailId = id;
+    for (let i = 0; i < maxRetryCount; i++) {
+        maxLoopCount = 7000;
+        res = loop(res[res.length - 1], res);
+
+        if (i === maxRetryCount - 1 || lastTailId === res[res.length - backSteps]) {
+            console.log(i);
+            break;
+        }
+        lastTailId = res[res.length - backSteps];
+        res = res.slice(0, res.length - backSteps);
+        await new Promise((r) => setImmediate(r, 0));
+    }
+    return res.map(id => map.get(id)?.[0]!);
+}
+function getRandomInt(low: number, up: number): number {
+    const range = Math.round(up - low);
+    const base = Math.random() * range + (low - 0.5);
+    return Math.round(base);
 }
