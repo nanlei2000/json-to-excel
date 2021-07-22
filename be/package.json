@@ -36,7 +36,7 @@
         "uuid": "^3.3.3",
         "webtorrent": "^0.107.17",
         "winston": "^3.2.1",
-        "xlsx": "^0.15.3"
+        "xlsx": "^0.17.0"
     },
     "devDependencies": {
         "@types/command-line-args": "^5.0.0",
